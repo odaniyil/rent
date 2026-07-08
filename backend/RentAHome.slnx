@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RentAHome.Api/RentAHome.Api.csproj" />
+    <Project Path="src/RentAHome.Application/RentAHome.Application.csproj" />
+    <Project Path="src/RentAHome.Domain/RentAHome.Domain.csproj" />
+    <Project Path="src/RentAHome.Infrastructure/RentAHome.Infrastructure.csproj" />
+    <Project Path="src/RentAHome.Persistence/RentAHome.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RentAHome.Tests/RentAHome.Tests.csproj" />
+  </Folder>
+</Solution>

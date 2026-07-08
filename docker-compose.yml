@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: rentahome-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rentahome_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-rentahome}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rentahome_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - rentahome-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rentahome} -d ${POSTGRES_DB:-rentahome_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  rentahome-postgres-data:

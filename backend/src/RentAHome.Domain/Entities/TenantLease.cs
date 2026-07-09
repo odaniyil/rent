@@ -11,6 +11,7 @@ public sealed class TenantLease
     public DateOnly EndDate { get; set; }
     public decimal MonthlyRent { get; set; }
     public decimal SecurityDeposit { get; set; }
+    public bool SecurityDepositReceived { get; set; }
     public TenantLeaseStatus Status { get; set; } = TenantLeaseStatus.Draft;
 
     public Tenant? Tenant { get; set; }

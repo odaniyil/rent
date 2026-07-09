@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using RentAHome.Application.Auth;
+using RentAHome.Application.Leases;
 using RentAHome.Application.Properties;
 using RentAHome.Domain.Enums;
 using RentAHome.Persistence;
@@ -144,8 +145,15 @@ properties.MapPost("/", async (
         return Results.BadRequest(new { error = validationError });
     }
 
-    var response = await propertyService.CreateAsync(request, cancellationToken);
-    return Results.Created($"/api/properties/{response.Id}", response);
+    try
+    {
+        var response = await propertyService.CreateAsync(request, cancellationToken);
+        return Results.Created($"/api/properties/{response.Id}", response);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
 })
     .WithName("CreateProperty");
 
@@ -168,8 +176,15 @@ properties.MapPut("/{id:guid}", async (
         return Results.BadRequest(new { error = validationError });
     }
 
-    var response = await propertyService.UpdateAsync(id, request, cancellationToken);
-    return response is null ? Results.NotFound() : Results.Ok(response);
+    try
+    {
+        var response = await propertyService.UpdateAsync(id, request, cancellationToken);
+        return response is null ? Results.NotFound() : Results.Ok(response);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
 })
     .WithName("UpdateProperty");
 
@@ -183,7 +198,142 @@ properties.MapDelete("/{id:guid}", async (
 })
     .WithName("DeleteProperty");
 
+var ownerLeases = app.MapGroup("/api/owner-leases")
+    .WithTags("Owner Leases")
+    .RequireAuthorization();
+
+ownerLeases.MapGet("/", async (
+    Guid? ownerId,
+    Guid? propertyId,
+    OwnerLeaseStatus? status,
+    ILeaseService leaseService,
+    CancellationToken cancellationToken) =>
+{
+    var request = new OwnerLeaseListRequest(ownerId, propertyId, status);
+    var response = await leaseService.ListOwnerLeasesAsync(request, cancellationToken);
+    return Results.Ok(response);
+})
+    .WithName("ListOwnerLeases");
+
+ownerLeases.MapGet("/{id:guid}", async (
+    Guid id,
+    ILeaseService leaseService,
+    CancellationToken cancellationToken) =>
+{
+    var response = await leaseService.GetOwnerLeaseAsync(id, cancellationToken);
+    return response is null ? Results.NotFound() : Results.Ok(response);
+})
+    .WithName("GetOwnerLease");
+
+ownerLeases.MapPost("/", async (
+    CreateOwnerLeaseRequest request,
+    ILeaseService leaseService,
+    CancellationToken cancellationToken) =>
+{
+    var response = await leaseService.CreateOwnerLeaseAsync(request, cancellationToken);
+    return response.Succeeded
+        ? Results.Created($"/api/owner-leases/{response.Value!.Id}", response.Value)
+        : Results.BadRequest(new { error = response.Error });
+})
+    .WithName("CreateOwnerLease");
+
+ownerLeases.MapPut("/{id:guid}", async (
+    Guid id,
+    UpdateOwnerLeaseRequest request,
+    ILeaseService leaseService,
+    CancellationToken cancellationToken) =>
+{
+    var response = await leaseService.UpdateOwnerLeaseAsync(id, request, cancellationToken);
+    return ToMutationResult(response);
+})
+    .WithName("UpdateOwnerLease");
+
+ownerLeases.MapDelete("/{id:guid}", async (
+    Guid id,
+    ILeaseService leaseService,
+    CancellationToken cancellationToken) =>
+{
+    var deleted = await leaseService.DeleteOwnerLeaseAsync(id, cancellationToken);
+    return deleted ? Results.NoContent() : Results.NotFound();
+})
+    .WithName("DeleteOwnerLease");
+
+var tenantLeases = app.MapGroup("/api/tenant-leases")
+    .WithTags("Tenant Leases")
+    .RequireAuthorization();
+
+tenantLeases.MapGet("/", async (
+    Guid? tenantId,
+    Guid? propertyId,
+    TenantLeaseStatus? status,
+    ILeaseService leaseService,
+    CancellationToken cancellationToken) =>
+{
+    var request = new TenantLeaseListRequest(tenantId, propertyId, status);
+    var response = await leaseService.ListTenantLeasesAsync(request, cancellationToken);
+    return Results.Ok(response);
+})
+    .WithName("ListTenantLeases");
+
+tenantLeases.MapGet("/{id:guid}", async (
+    Guid id,
+    ILeaseService leaseService,
+    CancellationToken cancellationToken) =>
+{
+    var response = await leaseService.GetTenantLeaseAsync(id, cancellationToken);
+    return response is null ? Results.NotFound() : Results.Ok(response);
+})
+    .WithName("GetTenantLease");
+
+tenantLeases.MapPost("/", async (
+    CreateTenantLeaseRequest request,
+    ILeaseService leaseService,
+    CancellationToken cancellationToken) =>
+{
+    var response = await leaseService.CreateTenantLeaseAsync(request, cancellationToken);
+    return response.Succeeded
+        ? Results.Created($"/api/tenant-leases/{response.Value!.Id}", response.Value)
+        : Results.BadRequest(new { error = response.Error });
+})
+    .WithName("CreateTenantLease");
+
+tenantLeases.MapPut("/{id:guid}", async (
+    Guid id,
+    UpdateTenantLeaseRequest request,
+    ILeaseService leaseService,
+    CancellationToken cancellationToken) =>
+{
+    var response = await leaseService.UpdateTenantLeaseAsync(id, request, cancellationToken);
+    return ToMutationResult(response);
+})
+    .WithName("UpdateTenantLease");
+
+tenantLeases.MapDelete("/{id:guid}", async (
+    Guid id,
+    ILeaseService leaseService,
+    CancellationToken cancellationToken) =>
+{
+    var deleted = await leaseService.DeleteTenantLeaseAsync(id, cancellationToken);
+    return deleted ? Results.NoContent() : Results.NotFound();
+})
+    .WithName("DeleteTenantLease");
+
 app.Run();
+
+static IResult ToMutationResult<T>(LeaseOperationResult<T> result)
+{
+    if (result.Succeeded)
+    {
+        return Results.Ok(result.Value);
+    }
+
+    if (result.Error?.EndsWith("was not found.", StringComparison.OrdinalIgnoreCase) == true)
+    {
+        return Results.NotFound(new { error = result.Error });
+    }
+
+    return Results.BadRequest(new { error = result.Error });
+}
 
 static string? ValidatePropertyRequest(
     string name,

@@ -83,6 +83,7 @@ public sealed class RentAHomeDbContext(DbContextOptions<RentAHomeDbContext> opti
         {
             entity.Property(lease => lease.MonthlyRent).HasPrecision(18, 2);
             entity.Property(lease => lease.SecurityDeposit).HasPrecision(18, 2);
+            entity.Property(lease => lease.SubleaseAllowed).HasDefaultValue(false);
             entity.Property(lease => lease.Status).HasConversion<string>().HasMaxLength(50);
 
             entity.HasOne(lease => lease.Owner)
@@ -114,6 +115,7 @@ public sealed class RentAHomeDbContext(DbContextOptions<RentAHomeDbContext> opti
         {
             entity.Property(lease => lease.MonthlyRent).HasPrecision(18, 2);
             entity.Property(lease => lease.SecurityDeposit).HasPrecision(18, 2);
+            entity.Property(lease => lease.SecurityDepositReceived).HasDefaultValue(false);
             entity.Property(lease => lease.Status).HasConversion<string>().HasMaxLength(50);
 
             entity.HasOne(lease => lease.Tenant)
@@ -392,6 +394,7 @@ public sealed class RentAHomeDbContext(DbContextOptions<RentAHomeDbContext> opti
             EndDate = new DateOnly(2026, 12, 31),
             MonthlyRent = 2500m,
             SecurityDeposit = 2500m,
+            SubleaseAllowed = true,
             Status = OwnerLeaseStatus.Active
         });
 
@@ -404,6 +407,7 @@ public sealed class RentAHomeDbContext(DbContextOptions<RentAHomeDbContext> opti
             EndDate = new DateOnly(2027, 1, 31),
             MonthlyRent = 3200m,
             SecurityDeposit = 3200m,
+            SecurityDepositReceived = true,
             Status = TenantLeaseStatus.Active
         });
 

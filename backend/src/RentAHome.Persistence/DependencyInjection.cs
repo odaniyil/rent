@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RentAHome.Application.Auth;
+using RentAHome.Application.Leases;
 using RentAHome.Application.Properties;
 using RentAHome.Persistence.Auth;
+using RentAHome.Persistence.Leases;
 using RentAHome.Persistence.Properties;
 
 namespace RentAHome.Persistence;
@@ -23,6 +25,7 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString, npgsql =>
                 npgsql.MigrationsAssembly(typeof(RentAHomeDbContext).Assembly.FullName)));
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<ILeaseService, LeaseService>();
         services.AddScoped<IPropertyService, PropertyService>();
 
         return services;

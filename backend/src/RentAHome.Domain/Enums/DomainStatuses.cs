@@ -5,7 +5,8 @@ public enum PropertyStatus
     Available = 1,
     Leased = 2,
     Maintenance = 3,
-    Inactive = 4
+    Inactive = 4,
+    SetupInProgress = 5
 }
 
 public enum OwnerStatus
@@ -19,7 +20,8 @@ public enum OwnerLeaseStatus
     Draft = 1,
     Active = 2,
     Expired = 3,
-    Terminated = 4
+    Terminated = 4,
+    Signed = 5
 }
 
 public enum TenantStatus

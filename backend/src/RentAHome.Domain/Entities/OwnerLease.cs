@@ -11,6 +11,7 @@ public sealed class OwnerLease
     public DateOnly EndDate { get; set; }
     public decimal MonthlyRent { get; set; }
     public decimal SecurityDeposit { get; set; }
+    public bool SubleaseAllowed { get; set; }
     public OwnerLeaseStatus Status { get; set; } = OwnerLeaseStatus.Draft;
 
     public Owner? Owner { get; set; }

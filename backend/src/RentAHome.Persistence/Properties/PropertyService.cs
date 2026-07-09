@@ -68,6 +68,12 @@ public sealed class PropertyService(RentAHomeDbContext dbContext) : IPropertySer
         CreatePropertyRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (request.Status == PropertyStatus.SetupInProgress)
+        {
+            throw new InvalidOperationException(
+                "Property cannot move to SetupInProgress without a signed owner lease.");
+        }
+
         var property = new Property
         {
             Name = request.Name.Trim(),
@@ -100,6 +106,19 @@ public sealed class PropertyService(RentAHomeDbContext dbContext) : IPropertySer
         if (property is null)
         {
             return null;
+        }
+
+        if (request.Status == PropertyStatus.SetupInProgress)
+        {
+            var hasSignedOwnerLease = await dbContext.OwnerLeases.AnyAsync(
+                lease => lease.PropertyId == id
+                    && (lease.Status == OwnerLeaseStatus.Signed || lease.Status == OwnerLeaseStatus.Active),
+                cancellationToken);
+            if (!hasSignedOwnerLease)
+            {
+                throw new InvalidOperationException(
+                    "Property cannot move to SetupInProgress without a signed owner lease.");
+            }
         }
 
         property.Name = request.Name.Trim();
